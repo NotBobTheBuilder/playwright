@@ -1,0 +1,16 @@
+{
+  "name": "playwright",
+  "version": "0.0.0",
+  "description": "WIP",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/NotBobTheBuilder/playwright"
+  },
+  "author": "Jack Wearden",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/NotBobTheBuilder/playwright/issues"
+  },
+  "homepage": "https://github.com/NotBobTheBuilder/playwright"
+}
