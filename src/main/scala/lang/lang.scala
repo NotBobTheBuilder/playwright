@@ -1,24 +1,26 @@
+package playwright.lang
+
 import scala.util.parsing.combinator.RegexParsers
 import scala.language.postfixOps
 
 trait Transpilable
 
 class Type
-object Number extends Type
-object Null extends Type
-object Undefined extends Type
-object String extends Type
-object Function extends Type
-object Inferred extends Type
+object TNumber extends Type
+object TNull extends Type
+object TUndefined extends Type
+object TString extends Type
+object TFunction extends Type
+object TInferred extends Type
 
 object Type {
   def withName(n: String) = {
     n match {
-      case "Number" => Number
-      case "Null" => Null
-      case "Undefined" => Undefined
-      case "String" => String
-      case "Function" => Function
+      case "Number" => TNumber
+      case "Null" => TNull
+      case "Undefined" => TUndefined
+      case "String" => TString
+      case "Function" => TFunction
     }
   }
 }
@@ -67,9 +69,9 @@ object PlaywrightParser extends RegexParsers {
 
   def funcSignature:  Parser[FunctionSignature]   = (("(" ~> (paramList) <~ ")")?) ~ ((":" ~> typeIdent)?) ^^ {
     case Some(ps) ~ Some(t)   => new FunctionSignature(ps, t)
-    case Some(ps) ~ None      => new FunctionSignature(ps, Inferred)
+    case Some(ps) ~ None      => new FunctionSignature(ps, TInferred)
     case None ~ Some(t)       => new FunctionSignature(List(), t)
-    case None ~ None          => new FunctionSignature(List(), Inferred)
+    case None ~ None          => new FunctionSignature(List(), TInferred)
   }
   def funcBody:       Parser[FunctionBody]        = (statement*) ~ expr ^^ {case ss ~ e => new FunctionBody(ss, e)}
   def function:       Parser[Function]            = funcSignature ~ ("->" ~> funcBody) ^^ { case sig ~ body => new Function(sig, body, sig.T) }

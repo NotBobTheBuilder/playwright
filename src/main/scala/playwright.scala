@@ -1,3 +1,7 @@
+package playwright
+
+import lang._
+
 object playwright {
   def toJS(t: Transpilable):String = t match {
     case Param(name, string)          => name
