@@ -1,4 +1,5 @@
 import scala.util.parsing.combinator.RegexParsers
+import scala.language.postfixOps
 
 trait Transpilable
 
@@ -8,6 +9,7 @@ object Null extends Type
 object Undefined extends Type
 object String extends Type
 object Function extends Type
+object Inferred extends Type
 
 object Type {
   def withName(n: String) = {
@@ -63,9 +65,11 @@ object PlaywrightParser extends RegexParsers {
 
   def paramList:      Parser[List[Param]]         = param ~ (("," ~> param)*)   ^^ { case p ~ ps => p :: ps }
 
-  def funcSignature:  Parser[FunctionSignature]   = ("(" ~> (paramList?) <~ ")") ~ (":" ~> typeIdent) ^^ {
-    case Some(ps) ~ t => new FunctionSignature(ps, t)
-    case None ~ t => new FunctionSignature(List(), t)
+  def funcSignature:  Parser[FunctionSignature]   = (("(" ~> (paramList) <~ ")")?) ~ ((":" ~> typeIdent)?) ^^ {
+    case Some(ps) ~ Some(t)   => new FunctionSignature(ps, t)
+    case Some(ps) ~ None      => new FunctionSignature(ps, Inferred)
+    case None ~ Some(t)       => new FunctionSignature(List(), t)
+    case None ~ None          => new FunctionSignature(List(), Inferred)
   }
   def funcBody:       Parser[FunctionBody]        = (statement*) ~ expr ^^ {case ss ~ e => new FunctionBody(ss, e)}
   def function:       Parser[Function]            = funcSignature ~ ("->" ~> funcBody) ^^ { case sig ~ body => new Function(sig, body, sig.T) }
