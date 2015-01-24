@@ -1,8 +1,6 @@
 import scala.util.parsing.combinator.RegexParsers
 
-trait Transpilable {
-  def toJS: String
-}
+trait Transpilable
 
 class Type
 object Number extends Type
@@ -23,69 +21,40 @@ object Type {
   }
 }
 
-class Param (
-  _name: String,
-  _T: Type
-) extends Transpilable {
-  var name = _name
-  var T = _T
-  def toJS(): String = {name}
-}
+case class Param (
+  name: String,
+  T: Type
+) extends Transpilable
 
 abstract class Expr extends Transpilable
 
-class Statement (
+case class Statement (
   op: Expr
-) extends Transpilable {
-  def toJS = { s"${op.toJS};"}
-}
+) extends Transpilable
 
-class Return (
-  _expr: Expr
-) extends Transpilable {
-  val expr = _expr
-  def toJS = {s"return ${new Statement(expr).toJS}"}
-}
+case class Return (
+  expr: Expr
+) extends Transpilable
 
-class FunctionSignature (
-  _params: List[Param],
-  _T: Type
-) extends Transpilable {
-  val T = _T
-  val params = _params
-  def toJS(): String = { params.map(_.toJS()).mkString(",") }
-}
+case class FunctionSignature (
+  params: List[Param],
+  T: Type
+) extends Transpilable
 
-class FunctionBody (
-  _stats: List[Statement],
-  _retval: Expr
-) extends Transpilable {
-  val stats = _stats
-  val retval = _retval
-  def toJS(): String = {
-    (stats.map(_.toJS) :+ new Return(_retval).toJS).mkString(" ")
-  }
-}
+case class FunctionBody (
+  stats: List[Statement],
+  retval: Expr
+) extends Transpilable
 
-class Function (
-  _sig: FunctionSignature,
-  _body: FunctionBody,
-  _T: Type
-) extends Expr with Transpilable {
-  var sig = _sig
-  var body = _body
-  var T = _T
-  def toJS(): String = {
-    s"function (${sig.toJS()}) { ${body.toJS()} }"
-  }
-}
+case class Function (
+  sig: FunctionSignature,
+  body: FunctionBody,
+  T: Type
+) extends Expr with Transpilable
 
-class Number (
-  _v: Double
-) extends Expr with Transpilable {
-  var v = _v
-  def toJS(): String = {v.toString()}
-}
+case class Number (
+  v: Double
+) extends Expr with Transpilable
 
 object PlaywrightParser extends RegexParsers {
   def ident:          Parser[String]              = """\w+""".r
