@@ -1,6 +1,5 @@
 language: scala
 scala:
-  - 2.11.2
   - 2.10.1
 notifications:
   email: false
