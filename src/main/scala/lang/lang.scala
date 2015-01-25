@@ -50,8 +50,8 @@ object PlaywrightParser extends RegexParsers {
 
   def paramList:      Parser[List[Param]]         = param ~ (("," ~> param)*)   ^^ { case p ~ ps => p :: ps }
 
-  def funcSignature:  Parser[FunctionSignature]   = (("(" ~> paramList <~ ")")?) ~ ((":" ~> typeIdent)?) ^^ {
-    case ps ~ t       => FunctionSignature(ps.getOrElse(List[Param]()), t)
+  def funcSignature:  Parser[FunctionSignature]   = (("(" ~> (paramList?) <~ ")")?) ~ ((":" ~> typeIdent)?) ^^ {
+    case ps ~ t       => FunctionSignature(ps.flatten.getOrElse(List[Param]()), t)
   }
   def funcBody:       Parser[FunctionBody]        = (statement*) ~ expr ^^ {case ss ~ e => FunctionBody(ss, e)}
   def function:       Parser[Function]            = funcSignature ~ ("->" ~> funcBody) ^^ { case sig ~ body => Function(sig, body) }
