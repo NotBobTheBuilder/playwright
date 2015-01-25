@@ -5,32 +5,16 @@ import scala.language.postfixOps
 
 trait Transpilable
 
-class Type
-object TNumber extends Type
-object TNull extends Type
-object TUndefined extends Type
-object TString extends Type
-object TFunction extends Type
-object TInferred extends Type
-
-object Type {
-  def withName(n: String) = {
-    n match {
-      case "Number" => TNumber
-      case "Null" => TNull
-      case "Undefined" => TUndefined
-      case "String" => TString
-      case "Function" => TFunction
-    }
-  }
-}
-
 case class Param (
   name: String,
-  T: Type
+  T: Option[String]
 ) extends Transpilable
 
 abstract class Expr extends Transpilable
+
+case class Program (
+  statements: List[Statement]
+) extends Transpilable
 
 case class Statement (
   op: Expr
@@ -42,7 +26,7 @@ case class Return (
 
 case class FunctionSignature (
   params: List[Param],
-  T: Type
+  T: Option[String]
 ) extends Transpilable
 
 case class FunctionBody (
@@ -52,8 +36,7 @@ case class FunctionBody (
 
 case class Function (
   sig: FunctionSignature,
-  body: FunctionBody,
-  T: Type
+  body: FunctionBody
 ) extends Expr with Transpilable
 
 case class Number (
@@ -62,22 +45,25 @@ case class Number (
 
 object PlaywrightParser extends RegexParsers {
   def ident:          Parser[String]              = """\w+""".r
-  def typeIdent:      Parser[Type]                = ident ^^ Type.withName
-  def param:          Parser[Param]               = ident ~ (":" ~> typeIdent)  ^^ { case p ~ t => new Param(p, t)}
+  def typeIdent:      Parser[String]              = ident
+  def param:          Parser[Param]               = ident ~ ((":" ~> typeIdent)?)  ^^ { case p ~ t => Param(p, t)}
 
   def paramList:      Parser[List[Param]]         = param ~ (("," ~> param)*)   ^^ { case p ~ ps => p :: ps }
 
-  def funcSignature:  Parser[FunctionSignature]   = (("(" ~> (paramList) <~ ")")?) ~ ((":" ~> typeIdent)?) ^^ {
-    case Some(ps) ~ Some(t)   => new FunctionSignature(ps, t)
-    case Some(ps) ~ None      => new FunctionSignature(ps, TInferred)
-    case None ~ Some(t)       => new FunctionSignature(List(), t)
-    case None ~ None          => new FunctionSignature(List(), TInferred)
+  def funcSignature:  Parser[FunctionSignature]   = (("(" ~> paramList <~ ")")?) ~ ((":" ~> typeIdent)?) ^^ {
+    case ps ~ t       => FunctionSignature(ps.getOrElse(List[Param]()), t)
   }
-  def funcBody:       Parser[FunctionBody]        = (statement*) ~ expr ^^ {case ss ~ e => new FunctionBody(ss, e)}
-  def function:       Parser[Function]            = funcSignature ~ ("->" ~> funcBody) ^^ { case sig ~ body => new Function(sig, body, sig.T) }
+  def funcBody:       Parser[FunctionBody]        = (statement*) ~ expr ^^ {case ss ~ e => FunctionBody(ss, e)}
+  def function:       Parser[Function]            = funcSignature ~ ("->" ~> funcBody) ^^ { case sig ~ body => Function(sig, body) }
 
-  def number:         Parser[Number]              = """\d+(\.\d*)?""".r ^^ { case n => new Number(n.toDouble)}
+  def number:         Parser[Number]              = """\d+(\.\d*)?""".r ^^ { case n => Number(n.toDouble)}
 
   def expr:           Parser[Expr]                = ("(" ~> expr <~ ")") | function | number
-  def statement:      Parser[Statement]           = expr <~ ";" ^^ {case e => new Statement(e)}
+  def statement:      Parser[Statement]           = expr <~ ";" ^^ {case e => Statement(e)}
+  def program:        Parser[Program]             = ((statement | expr)*) ^^ {
+    case l => Program(l.map {
+      case Statement(s) => Statement(s)
+      case x:Expr => Statement(x)
+    })
+  }
 }
