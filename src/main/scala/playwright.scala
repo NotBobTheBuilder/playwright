@@ -14,8 +14,13 @@ object playwright {
     case Program(ss)                  => ss.map(toJS).mkString(" ")
   }
 
-  def parse(raw: String): String = {
-    toJS(PlaywrightParser.parseAll(PlaywrightParser.program, raw).get)
+  def parseProgram(raw: String): Option[Program] = {
+    val p = PlaywrightParser.parseAll(PlaywrightParser.program, raw)
+    if (p.successful) Some(p.get) else None
+  }
+
+  def parse(raw: String): Option[String] = {
+    parseProgram(raw).map(toJS)
   }
 
   def main (args: Array[String]) {
